@@ -1,0 +1,16 @@
+.vs
+tmp
+vendor
+x86_64
+*.png
+*.jpg
+*.gif
+*.psd
+*.wav
+*.mp3
+*.ogg
+*.ttf
+*.otf
+*.wav
+*.ogg
+*.pyxel

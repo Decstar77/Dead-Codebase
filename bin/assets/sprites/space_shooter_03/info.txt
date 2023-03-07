@@ -1,0 +1,156 @@
+space_shooter_vol.3
+
+- enemy_1 
+size 310 x 386
+20 frames(10 left , 10 right )
+
+- enemy_2
+size 527 x 446
+16 frames(8 left, 8 right)
+
+- enemy_3
+size 101 x 126
+22 frames 360 spin
+
+- enemy_4
+size 177 x 168
+22 frames 360 spin
+
+- enemy_5 (glow ball)
+size 198 x 191
+20 frames 360 spin
+
+- playership
+size 98 x 89
+12 frames (6 left , 6 right) 
+
+- big flame
+size 128 x 256
+32 frames 
+
+- exp_1 (blueexp)
+size 265 x 265
+40 frames
+
+- exp_2
+size 165 x 162
+40 frames
+
+- thrust_1
+size 31 x 81
+4 frames
+
+- thrust_2
+size 128 x 128
+16 frames
+
+- thrust_3
+size 240 x 240
+16 frames
+
+- aster_ 1
+size 157 x 126
+20 frames
+
+- aster_2
+size 146 x 152
+20 frames
+
+- power_up (all color)
+size 68 x 67
+14 frames 360 spin
+
+- bullet_1
+size 16 x 16 
+1 frame
+
+- bullet_2(all color)
+size 38 x 45
+1 frame
+
+- bullet_3(all color)
+size 35 x 38
+1 frame
+
+- hit_fx
+size 32 x 32
+9 frames
+
+- muzzle_fx
+size 128 x 94
+8 frames
+
+- shot_1(red)
+size 92 x 108
+1 frame  (3 frames with power up)
+ 
+- shot_2(blue)
+size 89 x 129
+1 frame  (3 frames with power up)
+
+- shot_3(yellow)
+size 114 x 104
+1 frame  (3 frames with power up)
+
+- shot_4(laser)
+size 30 x 105
+1 / 3 frame 
+
+- missle
+size 29 x 75
+1 frame
+
+- sidekick 
+size 37 x 49
+15 frames 360 spin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 

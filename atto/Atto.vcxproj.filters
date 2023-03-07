@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor">
+      <UniqueIdentifier>{B3738122-9F15-ACF8-88D0-BF4C74113349}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\stb">
+      <UniqueIdentifier>{8BD3C5A8-778B-07F6-E092-E051CC69A2E6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\stb\stb_vorbis">
+      <UniqueIdentifier>{D7E950E0-4356-0CDB-0C4A-A43878752E43}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\AttoAsset.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AttoContainers.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AttoDefines.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AttoInput.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AttoLib.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AttoList.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AttoLua.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AttoMath.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\AttoRendering.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\vendor\stb\stb_vorbis\stb_vorbis.c">
+      <Filter>vendor\stb\stb_vorbis</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AttoAsset.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AttoContainers.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AttoLib.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AttoLua.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AttoLuaBindings.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AttoMath.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AttoRendering.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\LeMimcrosoft.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\AttoDrawUI.cpp" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,83 @@
+{
+    "ship_b": {
+        "texture": "kenny_sprites_01/ship_B",
+        "origin": "CENTER",
+        "frameSize": {
+            "x": 128,
+            "y": 128
+        },
+        "frameCount": 1
+    },
+    "tile_basic_grass": {
+        "texture": "pixel_art_forest_pack/Floors/GrassTile1",
+        "origin": "CENTER",
+        "frameSize": {
+            "x": 50,
+            "y": 25
+        },
+        "frameCount": 1
+    },
+    "tile_test": {
+        "texture": "tile_test",
+        "origin": "CENTER",
+        "frameSize": {
+            "x": 32,
+            "y": 32
+        },
+        "frameCount": 1
+    },
+    "tile_blocker": {
+        "texture": "tile_blocker",
+        "origin": "CENTER",
+        "frameSize": {
+            "x": 32,
+            "y": 32
+        },
+        "frameCount": 1
+    },
+    "unit_basic_capsule": {
+        "texture": "unit_basic_capsule",
+        "origin": "CENTER",
+        "frameSize": {
+            "x": 7,
+            "y": 16
+        },
+        "frameCount": 1
+    },
+    "unit_basic_man": {
+        "texture": "unit_basic_man",
+        "origin": "BOTTOM_CENTER",
+        "frameSize": {
+            "x": 24,
+            "y": 24
+        },
+        "frameCount": 4
+    },
+    "unit_basic_man_enemy": {
+        "texture": "unit_basic_man_enemy",
+        "origin": "BOTTOM_CENTER",
+        "frameSize": {
+            "x": 24,
+            "y": 24
+        },
+        "frameCount": 1
+    },
+    "unit_basic_man_selection": {
+        "texture": "unit_basic_man_selection",
+        "origin": "CENTER",
+        "frameSize": {
+            "x": 10,
+            "y": 6
+        },
+        "frameCount": 1
+    },
+    "starfield_02": {
+        "texture": "backgrounds/starfield_2",
+        "origin": "CENTER",
+        "frameSize": {
+            "x": 2048,
+            "y": 1536
+        },
+        "frameCount": 1
+    }
+}
