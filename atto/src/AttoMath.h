@@ -53,9 +53,7 @@ namespace atto
 
     struct PolygonCollider {
         FixedList<glm::vec2, 8> vertices;
-
         void                   Translate(const glm::vec2& translation);
-        void                   Triangluate(FixedList<glm::vec2, 16>& outVertices);
     };
 
     struct BoxBounds {
@@ -79,5 +77,11 @@ namespace atto
     class CollisionTests {
     public:
         static bool CirclePoly(const Circle &circle, const PolygonCollider &poly, Manifold& manifold);
+    };
+
+    class Geometry {
+    public:
+        static void SortPointsIntoClockWiseOrder(glm::vec2* vertices, i32 verticesCount);
+        static i32  Triangulate(PolygonCollider poly, glm::vec2* outVertices, i32 outVerticesCapcity);
     };
 }

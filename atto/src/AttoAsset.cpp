@@ -1175,9 +1175,9 @@ namespace atto {
         DrawShapeCommand cmd = DrawShapeCreateCommand();
         cmd.type = DRAW_SHAPE_TYPE_RECT_POLY;
 
-        PolygonCollider p = polygon;
-        p.Triangluate(cmd.poly);
-        for (int i = 0; i < cmd.poly.GetCount(); i++) {
+        const i32 polyCount = Geometry::Triangulate(polygon, cmd.poly.GetData(), cmd.poly.GetCapcity());
+        cmd.poly.SetCount(polyCount);
+        for (i32 i = 0; i < cmd.poly.GetCount(); i++) {
             cmd.poly[i] = WorldPosToScreenPos(cmd.poly[i]);
         }
 

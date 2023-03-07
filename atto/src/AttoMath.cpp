@@ -151,45 +151,78 @@ namespace atto
         }
     }
 
-    void PolygonCollider::Triangluate(FixedList<glm::vec2, 16>& outVertices) {
-        outVertices.Clear();
+    static i32 CompareVerticesClockwise(void* context, const void* a, const void* b) {
+        const glm::vec2* va = static_cast<const glm::vec2*>(a);
+        const glm::vec2* vb = static_cast<const glm::vec2*>(b);
+        glm::vec2 center = *static_cast<glm::vec2*>(context);
+        glm::vec2 aDir = *va - center;
+        glm::vec2 bDir = *vb - center;
+        return std::atan2(aDir.y, aDir.x) < std::atan2(bDir.y, bDir.x) ? -1 : 1;
+    }
+
+    void Geometry::SortPointsIntoClockWiseOrder(glm::vec2* vertices, i32 verticesCount) {
+        glm::vec2 center(0.0f, 0.0f);
+        for (i32 vertexIndex = 0; vertexIndex < verticesCount; ++vertexIndex) {
+            center += vertices[vertexIndex];
+        }
+        center /= (f32)verticesCount;
+
+        qsort_s(vertices, verticesCount, sizeof(glm::vec2), CompareVerticesClockwise, &center);
+    }
+
+    i32 Geometry::Triangulate(PolygonCollider poly, glm::vec2* outVertices, i32 outVerticesCapcity) {
+        if (poly.vertices.GetCount() < 3) {
+            return 0;
+        }
+
+        SortPointsIntoClockWiseOrder(poly.vertices.GetData(), poly.vertices.GetCount());
+
+        i32 outVertexIndex = 0;
+        if (poly.vertices.GetCount() == 3) {
+            outVertices[outVertexIndex] = poly.vertices[0];
+            outVertexIndex++;
+            outVertices[outVertexIndex] = poly.vertices[1];
+            outVertexIndex++;
+            outVertices[outVertexIndex] = poly.vertices[2];
+
+            return 3;
+        }
         
-        if (vertices.GetCount() < 3) {
-            return;
-        }
-
-        if (vertices.GetCount() == 3) {
-            outVertices.Add(vertices[0]);
-            outVertices.Add(vertices[1]);
-            outVertices.Add(vertices[2]);
-        }
-
         bool impossibleToTriangulate = false;
         bool triangleFound = true;
 
-        while (vertices.GetCount() != 0) {
+        while (poly.vertices.GetCount() != 0) {
             if (!triangleFound) {
-                return;
+                return outVertexIndex;
             }
 
             triangleFound = false;
 
-            for (i32 i = 0; i < vertices.GetCount() - 2; i++) {
+            for (i32 i = 0; i < poly.vertices.GetCount() - 2; i++) {
                 if (!triangleFound) {
-                    f32 d = Determinant(vertices[i + 2] - vertices[i + 1], vertices[i + 1] - vertices[i]);
+                    const f32 d = Determinant(poly.vertices[i + 2] - poly.vertices[i + 1], poly.vertices[i + 1] - poly.vertices[i]);
                     if (d < 0) {
                         triangleFound = true;
 
-                        outVertices.Add(vertices[i]);
-                        outVertices.Add(vertices[i + 1]);
-                        outVertices.Add(vertices[i + 2]);
+                        if (outVertexIndex + 3 > outVerticesCapcity) {
+                            ATTOERROR("Not enough space to triangulate polygon");
+                            return 0;
+                        }
 
-                        vertices.RemoveIndex(i + 1);
+                        outVertices[outVertexIndex] = poly.vertices[i];
+                        outVertexIndex++;
+                        outVertices[outVertexIndex] = poly.vertices[i + 1];
+                        outVertexIndex++;
+                        outVertices[outVertexIndex] = poly.vertices[i + 2];
+                        outVertexIndex++;
+
+                        poly.vertices.RemoveIndex(i + 1);
                     }
                 }
             }
         }
 
+        return outVertexIndex;
     }
 
 }
