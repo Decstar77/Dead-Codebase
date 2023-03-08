@@ -76,7 +76,12 @@ namespace atto
 
     class CollisionTests {
     public:
-        static bool CirclePoly(const Circle &circle, const PolygonCollider &poly, Manifold& manifold);
+
+        static bool CirclePoly(const Circle& circle, const PolygonCollider& poly, Manifold& manifold);
+        static glm::vec2 ClosestVertexOnPoly(const PolygonCollider& poly, const glm::vec2& point);
+    private:
+        static void ProjectVertices(const glm::vec2* vertices, i32 verticesCount, glm::vec2 axis, f32& min, f32& max);
+        static void ProjectCircle(const Circle& circle, glm::vec2 axis, f32& min, f32& max);
     };
 
     class Geometry {

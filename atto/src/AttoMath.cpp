@@ -93,38 +93,124 @@ namespace atto
             (point.y >= min.y && point.y <= max.y);
     }
 
-    bool CollisionTests::CirclePoly(const Circle& circle, const PolygonCollider& poly, Manifold& manifold) {
-        f32 minDist = FLT_MAX;
-        glm::vec2 closestPoint = {};
-        glm::vec2 closestNormal = {};
-        f32 closestDist = FLT_MAX;
-        glm::vec2 closestPointOnPoly = {};
+    void CollisionTests::ProjectVertices(const glm::vec2* vertices, i32 verticesCount, glm::vec2 axis, f32& min, f32& max) {
+        min = REAL_MAX;
+        max = REAL_MIN;
 
-        const i32 count = poly.vertices.GetCount();
-        for (i32 i = 0; i < count; ++i) {
-            glm::vec2 edge = poly.vertices[(i + 1) % count] - poly.vertices[i];
-            glm::vec2 normal = glm::normalize(glm::vec2(-edge.y, edge.x));
-            glm::vec2 pointOnPoly = poly.vertices[i] + normal * glm::dot(normal, circle.pos - poly.vertices[i]);
+        for (i32 i = 0; i < verticesCount; i++) {
+            glm::vec2 v = vertices[i];
+            f32 proj = glm::dot(v, axis);
 
-            f32 dist = glm::distance(circle.pos, pointOnPoly);
-            if (dist < circle.rad) {
-                if (dist < closestDist) {
-                    closestDist = dist;
-                    closestPointOnPoly = pointOnPoly;
-                    closestNormal = normal;
-                }
+            if (proj < min) { min = proj; }
+            if (proj > max) { max = proj; }
+        }
+    }
+
+    void CollisionTests::ProjectCircle(const Circle& circle, glm::vec2 axis, f32& min, f32& max) {
+        glm::vec2 direction = glm::normalize(axis);
+        glm::vec2 directionAndRadius = direction * circle.rad;
+
+        glm::vec2 p1 = circle.pos + directionAndRadius;
+        glm::vec2 p2 = circle.pos - directionAndRadius;
+
+        min = glm::dot(p1, axis);
+        max = glm::dot(p2, axis);
+
+        if (min > max) {
+            // swap the min and max values.
+            float t = min;
+            min = max;
+            max = t;
+        }
+    }
+
+    glm::vec2 CollisionTests::ClosestVertexOnPoly(const PolygonCollider& poly, const glm::vec2& point) {
+        f32 minDistance = REAL_MAX;
+        glm::vec2 closePoint = {};
+        const i32 vertexCount = poly.vertices.GetCount();
+
+        for (i32 i = 0; i < vertexCount; i++) {
+            glm::vec2 v = poly.vertices[i];
+            f32 distance = glm::distance2(v, point);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closePoint = v;
             }
         }
 
-        if (closestDist != FLT_MAX) {
-            manifold.normal = closestNormal;
-            manifold.penetration = circle.rad - closestDist;
-            manifold.pointA = circle.pos - closestNormal * circle.rad;
-            manifold.pointB = closestPointOnPoly;
-            return true;
+        return closePoint;
+    }
+
+    bool CollisionTests::CirclePoly(const Circle& circle, const PolygonCollider& poly, Manifold& manifold) {
+        glm::vec2 axis = {};
+        float axisDepth = 0.f;
+        f32 minA = 0;
+        f32 maxA = 0;
+        f32 minB = 0;
+        f32 maxB = 0;
+
+        f32 depth = REAL_MAX;
+        glm::vec2 normal = {};
+
+        const i32 vertexCount = poly.vertices.GetCount();
+        for (int i = 0; i < vertexCount; i++) {
+            glm::vec2 va = poly.vertices[i];
+            glm::vec2 vb = poly.vertices[(i + 1) % vertexCount];
+
+            glm::vec2 edge = vb - va;
+            axis = glm::normalize(glm::vec2(-edge.y, edge.x));
+
+            ProjectVertices(poly.vertices.GetData(), vertexCount, axis, minA, maxA);
+            ProjectCircle(circle, axis, minB, maxB);
+
+            if (minA >= maxB || minB >= maxA) {
+                return false;
+            }
+
+            axisDepth = glm::min(maxB - minA, maxA - minB);
+
+            if (axisDepth < depth) {
+                depth = axisDepth;
+                normal = axis;
+            }
         }
 
-        return false;
+        glm::vec2 cp = ClosestVertexOnPoly(poly, circle.pos);
+
+        axis = cp - circle.pos;
+        axis = glm::normalize(axis);
+
+        ProjectVertices(poly.vertices.GetData(), vertexCount, axis, minA, maxA);
+        ProjectCircle(circle, axis, minB, maxB);
+
+        if (minA >= maxB || minB >= maxA) {
+            return false;
+        }
+
+        axisDepth = glm::min(maxB - minA, maxA - minB);
+
+        if (axisDepth < depth) {
+            depth = axisDepth;
+            normal = axis;
+        }
+
+        glm::vec2 polygonCenter(0.0f, 0.0f);
+        for (i32 vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+            polygonCenter += poly.vertices[vertexIndex];
+        }
+        polygonCenter/= (f32)vertexCount;
+
+        glm::vec2 direction = polygonCenter - circle.pos;
+
+        if (glm::dot(direction, normal) < 0.0f) {
+            normal = -normal;
+        }
+
+        manifold.normal = normal;
+        manifold.penetration = depth;
+
+        return true;
     }
 
     inline static f32 Determinant(glm::vec2 u, glm::vec2 v) {

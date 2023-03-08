@@ -105,7 +105,7 @@ namespace atto {
                 f32 x = (f32)12 * j - 12 * 2;
                 f32 y = (f32)-6 * j - 6 * 6;
                 
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < 11; i++) {
                     //entity.pos = glm::vec2(mainSurfaceWidth / 2, mainSurfaceHeight / 2);
                     Entity* entity = MapCreateEntity();
                     entity->pos.x = x;
@@ -160,7 +160,7 @@ namespace atto {
     }
 
     void LeEngine::Update(AppState* app) {
-        //ProfilerClock profilerClock("Update");
+        ProfilerClock profilerClock("Update");
 
 #if ATTO_DEBUG
         for (i32 i = 0; i < DebugFunctionKey::keys.GetCount(); i++) {
@@ -423,12 +423,25 @@ namespace atto {
                     }
                 }
 
+                const i32 blockerCapcity = currentMap->blockerTileEntities.GetCapcity();
+                for (i32 i = 0; i < blockerCapcity; i++) {
+                    Entity& blocker = currentMap->blockerTileEntities[i];
+                    if (blocker.blocker.active) {
+                        const Circle currentUnitCollider = UnitGetCollider(entity);
+                        const PolygonCollider blockerCollider = BlockerGetCollider(blocker);
+
+                        Manifold manifold = {};
+                        if (CollisionTests::CirclePoly(currentUnitCollider, blockerCollider, manifold)) {
+                            entity.pos -= manifold.normal * manifold.penetration;
+                        }
+                    }
+                }
+
                 if (debugDrawBoundsAndColliders.value) {
                     const BoxBounds bounds = EntityGetBoundingBox(entity);
                     const Circle collider = UnitGetCollider(entity);
                     DrawShapeRect(WorldPosToScreenPos(bounds.min), WorldPosToScreenPos(bounds.max), glm::vec4(0.5f));
                     DrawShapeCircle(WorldPosToScreenPos(collider.pos), WorldLengthToScreenLength(collider.rad), glm::vec4(0.5f));
-                    
                 }
                 if (debugDrawUnitRanges.value) {
                     DrawShapeCircle(WorldPosToScreenPos(entity.pos), WorldLengthToScreenLength(firingRange), glm::vec4(1.0f, 0.4f, 0.4f, 0.5f) * 0.1f);
@@ -441,19 +454,13 @@ namespace atto {
             const i32 blockerCapcity = currentMap->blockerTileEntities.GetCapcity();
             for (i32 blockerIndex = 0; blockerIndex < blockerCapcity; blockerIndex++) {
                 Entity& blocker = currentMap->blockerTileEntities[blockerIndex];
-                if (blocker.sprite1.active) {
-                    //Box collider = blocker.blocker.localCollider;
-                    //collider.pos += blocker.pos;
-
-                    //glm::vec2 screenDim;
-                    //screenDim.x = WorldLengthToScreenLength(collider.dim.x);
-                    //screenDim.y = WorldLengthToScreenLength(collider.dim.y);
-                    //
-                    //DrawShapeRectCenterDimRot(WorldPosToScreenPos(collider.pos), screenDim, collider.rot, glm::vec4(0.5f));
+                if (blocker.blocker.active) {
+                    PolygonCollider collider = blocker.blocker.collider;
+                    collider.Translate(blocker.pos);
+                    DrawShapePolygon(collider, glm::vec4(1.0f, 0.4f, 0.4f, 0.5f) * 1.1f);
                 }
             }
         }
-
 
         //DrawShapeCircle(glm::vec2(200, 200), 50);
 
@@ -519,15 +526,14 @@ namespace atto {
         //DrawUIDemoJSON();
         //DrawUIDemoWindow();
         
-        PolygonCollider p = {};
-        p.vertices.Add(  glm::vec2(-16, -9) );
-        p.vertices.Add(  glm::vec2(0, -16) );
-        p.vertices.Add(  glm::vec2(16, -9) );
-        p.vertices.Add(  glm::vec2(16, 9) );
-        p.vertices.Add(  glm::vec2(0, 16) );
-        p.vertices.Add(  glm::vec2(-16, 9) );
-
-        DrawShapePolygon(p);
+        //PolygonCollider p = {};
+        //p.vertices.Add(  glm::vec2(-16, -9) );
+        //p.vertices.Add(  glm::vec2(0, -16) );
+        //p.vertices.Add(  glm::vec2(16, -9) );
+        //p.vertices.Add(  glm::vec2(16, 9) );
+        //p.vertices.Add(  glm::vec2(0, 16) );
+        //p.vertices.Add(  glm::vec2(-16, 9) );
+        //DrawShapePolygon(p);
 
         static f32 r = 0;
         r += app->deltaTime * 2.0f;
@@ -719,10 +725,13 @@ namespace atto {
                     Entity entity = {};
                     entity.pos = MapTilePosToWorldPos(map, glm::vec2(x, y));
 
-                    entity.blocker.collider.vertices.Add(glm::vec2(-8, 4));
-                    entity.blocker.collider.vertices.Add(glm::vec2(8, 4));
-                    entity.blocker.collider.vertices.Add(glm::vec2(8, -4));
-                    //entity.blocker.collider.vertices.Add(glm::vec2(-8, -4));
+                    entity.blocker.active = true;
+                    entity.blocker.collider.vertices.Add(glm::vec2(-16, -9));
+                    entity.blocker.collider.vertices.Add(glm::vec2(0, -16));
+                    entity.blocker.collider.vertices.Add(glm::vec2(16, -9));
+                    entity.blocker.collider.vertices.Add(glm::vec2(16, 7));
+                    entity.blocker.collider.vertices.Add(glm::vec2(0, 15));
+                    entity.blocker.collider.vertices.Add(glm::vec2(-16, 7));
 
                     entity.sprite1.active = true;
                     entity.sprite1.sprite = GetSpriteAsset(AssetId::Create("tile_blocker"));
@@ -837,6 +846,13 @@ namespace atto {
         }
 
         return nullptr;
+    }
+
+    PolygonCollider LeEngine::BlockerGetCollider(const Entity& entity) {
+        PolygonCollider collider = entity.blocker.collider;
+        collider.Translate(entity.pos);
+        
+        return collider;
     }
 
     TextureAsset* LeEngine::LoadTextureAsset(TextureAssetId id) {

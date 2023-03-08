@@ -344,7 +344,7 @@ namespace atto
     struct ShapeRenderingState {
         ShaderProgram                       program;
         VertexBuffer                        vertexBuffer;
-        FixedList<DrawShapeCommand, 128>    commands;
+        FixedList<DrawShapeCommand, 256>    commands;
     };
 
     struct UIRenderingState {
@@ -493,7 +493,8 @@ namespace atto
     };
     
     struct Blocker {
-        PolygonCollider    collider;
+        bool                active;
+        PolygonCollider     collider;
     };
 
     struct Entity {
@@ -545,7 +546,6 @@ namespace atto
         Entity*                             MapGetEntity(const EntityId &id);
         void                                MapDestroyEntity(Entity* entity);
         glm::vec2                           MapTilePosToWorldPos(Map *map, glm::vec2 tilePos);
-        glm::vec2                           WorldPosToMapTilePos(Map* map, glm::vec2 worldPos);
 
         BoxBounds                           EntityGetBoundingBox(const Entity& entity);
 
@@ -555,6 +555,8 @@ namespace atto
         glm::vec2                           UnitSteerWander(Entity& entity);
 
         const void *                        LoadEngineAsset(AssetId id, AssetType type);
+
+        PolygonCollider                     BlockerGetCollider(const Entity& entity);
         
         TextureAsset*                       GetTextureAsset(TextureAssetId id);
         TextureAsset*                       LoadTextureAsset(TextureAssetId id);
