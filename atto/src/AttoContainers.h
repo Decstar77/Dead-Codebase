@@ -9,22 +9,22 @@ namespace atto
     class FixedList
     {
     public:
-        T*             GetData();
-        const T*       GetData() const;
-        i32            GetCapcity() const;
-        i32            GetCount() const;
-        void           SetCount(i32 count);
-        bool           IsFull() const;
-        bool           IsEmpty() const;
-        void           Clear();
+        T*              GetData();
+        const T*        GetData() const;
+        i32             GetCapcity() const;
+        i32             GetCount() const;
+        void            SetCount(i32 count);
+        bool            IsFull() const;
+        bool            IsEmpty() const;
+        void            Clear();
 
-        T* Add(const T& value);
-        b8             AddIfPossible(const T& t);
-        void           RemoveIndex(const i32& index);
-        void           Remove(const T* ptr);
+        T*              Add(const T& value);
+        b8              AddIfPossible(const T& t);
+        void            RemoveIndex(const i32& index);
+        void            Remove(const T* ptr);
 
-        T* Get(const i32& index);
-        const T* Get(const i32& index) const;
+        T*              Get(const i32& index);
+        const T*        Get(const i32& index) const;
 
         T& operator[](const i32& index);
         T operator[](const i32& index) const;
@@ -765,4 +765,60 @@ namespace atto
         static SmallString Small(const char* format, ...);
         static LargeString Large(const char* format, ...);
     };
+
+    template<typename T, i32 capcity>
+    class FixedQueue
+    {
+    public:
+        bool            IsEmpty() const;
+        void            Clear();
+        T*              Enqueue(const T& value);
+        T               Dequeue();
+        
+    private:
+        T data[capcity];
+        i32 count;
+        i32 head;
+        i32 tail;
+    };
+
+    template<typename T, i32 capcity>
+    bool atto::FixedQueue<T, capcity>::IsEmpty() const {
+        return count == 0;
+    }
+
+    template<typename T, i32 capcity>
+    void atto::FixedQueue<T, capcity>::Clear() {
+        count = 0;
+        head = 0;
+        tail = 0;
+    }
+
+    template<typename T, i32 capcity>
+    T* atto::FixedQueue<T, capcity>::Enqueue(const T& value) {
+        Assert(count < capcity, "FixedQueue, queue is full");
+        
+        if (count == capacity) {
+            return nullptr;
+        }
+        
+        data[tail] = value;
+        T* stored = &data[tail];
+        tail = (tail + 1) % capcity;
+        count++;
+        return stored;
+    }
+
+    template<typename T, i32 capcity>
+    T atto::FixedQueue<T, capcity>::Dequeue() {
+        Assert(count > 0, "FixedQueue, queue is empty");
+        if (count == 0) {
+            return {};
+        }
+
+        T result = data[head];
+        head = (head + 1) % capacity;
+        count--;
+        return result;
+    }
 }

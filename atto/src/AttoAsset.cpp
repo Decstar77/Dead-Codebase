@@ -37,6 +37,7 @@ namespace atto {
 
     const static DebugFunctionKey debugDrawBoundsAndColliders(KEY_CODE_F1);
     const static DebugFunctionKey debugDrawUnitRanges(KEY_CODE_F2);
+    const static DebugFunctionKey debugDrawTileLocation(KEY_CODE_F3);
 
     static void FindAllFiles(const char* path, const char* extension, List<LargeString> &files) {
         for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
@@ -86,6 +87,25 @@ namespace atto {
             "1000000000000001"  //15
             "1111111111111111"; //16
 
+        //const char* mapData =
+        //    "1000000000000000"  //1
+        //    "0000000000000000"  //2
+        //    "0000000000000000"  //3
+        //    "0000000000000000"  //4
+        //    "0000000000000000"  //5
+        //    "0000111111110000"  //6
+        //    "0000000000000000"  //7
+        //    "0000000000000000"  //8
+        //    "0000000000000000"  //9
+        //    "0000000000000000"  //10
+        //    "0000000000000000"  //11
+        //    "0000000000000000"  //12
+        //    "0000000000000000"  //13
+        //    "0000000000000000"  //14
+        //    "0000000000000000"  //15
+        //    "0000000000000000"; //16
+
+
         MapCreate(&demoMap, mapData, 16, 16);
         currentMap = &demoMap;
 
@@ -101,11 +121,11 @@ namespace atto {
             //entities.Add(entity);
         }
         {
-            for (int j = 0; j < 2; j++) {
+            for (int j = 0; j < 1; j++) {
                 f32 x = (f32)12 * j - 12 * 2;
                 f32 y = (f32)-6 * j - 6 * 6;
                 
-                for (int i = 0; i < 11; i++) {
+                for (int i = 0; i < 1; i++) {
                     //entity.pos = glm::vec2(mainSurfaceWidth / 2, mainSurfaceHeight / 2);
                     Entity* entity = MapCreateEntity();
                     entity->pos.x = x;
@@ -160,7 +180,7 @@ namespace atto {
     }
 
     void LeEngine::Update(AppState* app) {
-        ProfilerClock profilerClock("Update");
+        //ProfilerClock profilerClock("Update");
 
 #if ATTO_DEBUG
         for (i32 i = 0; i < DebugFunctionKey::keys.GetCount(); i++) {
@@ -237,6 +257,7 @@ namespace atto {
         }
 
         const glm::vec2 mousePosWorldSpace = GetMousePosWorldSpace();
+        const glm::vec2 mousePosTileSpace = MapWorldPosToTilePos(currentMap, mousePosWorldSpace);
 
         const f32 roomWidth =  (f32)mainSurfaceWidth;
         const f32 roomHeight = (f32)mainSurfaceHeight;
@@ -285,7 +306,6 @@ namespace atto {
                             }
 
                             Entity& otherUnit = currentMap->unitEntities[otherUnitIndex];
-
                             if (otherUnit.unit.teamNumber) {
                                 const BoxBounds otherUnitBounds = EntityGetBoundingBox(otherUnit);
                                 if (otherUnitBounds.Contains(mousePosWorldSpace)) {
@@ -300,6 +320,12 @@ namespace atto {
                         if (isBasicMoveCommand) {
                             entity.unit.target.type = UNIT_TARGET_TYPE_GROUND_POS;
                             entity.unit.target.groundPos = mousePosWorldSpace;
+
+                            //static FixedQueue<MapTile, 1024> frontier = {};
+                            //frontier.Clear();
+                            //MapTile startingBlocker = entity.pos;
+                            //frontier.Enqueue();
+                            
                         }
                     }
                 }
@@ -426,7 +452,7 @@ namespace atto {
                 const i32 blockerCapcity = currentMap->blockerTileEntities.GetCapcity();
                 for (i32 i = 0; i < blockerCapcity; i++) {
                     Entity& blocker = currentMap->blockerTileEntities[i];
-                    if (blocker.blocker.active) {
+                    if (blocker.blocker.isBlocker) {
                         const Circle currentUnitCollider = UnitGetCollider(entity);
                         const PolygonCollider blockerCollider = BlockerGetCollider(blocker);
 
@@ -454,9 +480,12 @@ namespace atto {
             const i32 blockerCapcity = currentMap->blockerTileEntities.GetCapcity();
             for (i32 blockerIndex = 0; blockerIndex < blockerCapcity; blockerIndex++) {
                 Entity& blocker = currentMap->blockerTileEntities[blockerIndex];
-                if (blocker.blocker.active) {
+                if (blocker.blocker.isBlocker) {
                     PolygonCollider collider = blocker.blocker.collider;
                     collider.Translate(blocker.pos);
+                    for (i32 vertexIndex = 0; vertexIndex < collider.vertices.GetCount(); vertexIndex++) {
+                        collider.vertices[vertexIndex] = WorldPosToScreenPos(collider.vertices[vertexIndex]);
+                    }
                     DrawShapePolygon(collider, glm::vec4(1.0f, 0.4f, 0.4f, 0.5f) * 1.1f);
                 }
             }
@@ -508,16 +537,41 @@ namespace atto {
             }
         }
 
-        //for (i32 y = 0; y < currentMap->mapHeight; y++) {
-        //    for (i32 x = 0; x < currentMap->mapWidth; x++) {
-        //        glm::vec2 tilePos = glm::vec2(x, y);
-        //        glm::vec2 worldPos = MapTilePosToWorldPos(currentMap, tilePos);
-        //        glm::vec2 screenPos = WorldPosToScreenPos(worldPos);
-        //        SmallString text = StringFormat::Small("%d,%d", x, y);
-        //        DrawTextSetHalign(FONT_HALIGN_CENTER);
-        //        DrawText(text, screenPos);
-        //    }
-        //}
+        if (debugDrawTileLocation.value) {
+            for (i32 y = 0; y < currentMap->mapHeight - 1; y++) {
+                for (i32 x = 0; x < currentMap->mapWidth - 1; x++) {
+                    glm::vec2 tilePos1 = glm::vec2(x, y);
+                    glm::vec2 tilePos2 = glm::vec2(x + 1, y);
+                    glm::vec2 tilePos3 = glm::vec2(x, y + 1);
+                    glm::vec2 tilePos4 = glm::vec2(x + 1, y + 1);
+
+                    glm::vec2 worldPos1 = MapTilePosToWorldPos(currentMap, tilePos1);
+                    glm::vec2 worldPos2 = MapTilePosToWorldPos(currentMap, tilePos2);
+                    glm::vec2 worldPos3 = MapTilePosToWorldPos(currentMap, tilePos3);
+                    glm::vec2 worldPos4 = MapTilePosToWorldPos(currentMap, tilePos4);
+                    
+                    glm::vec2 screenPos1 = WorldPosToScreenPos(worldPos1);
+                    glm::vec2 screenPos2 = WorldPosToScreenPos(worldPos2);
+                    glm::vec2 screenPos3 = WorldPosToScreenPos(worldPos3);
+                    glm::vec2 screenPos4 = WorldPosToScreenPos(worldPos4);
+
+                    glm::vec2 screenCenter = (screenPos1 + screenPos2 + screenPos3 + screenPos4) / 4.0f;
+
+                    screenPos1 = screenCenter + (screenPos1 - screenCenter) * 0.9f;
+                    screenPos2 = screenCenter + (screenPos2 - screenCenter) * 0.9f;
+                    screenPos3 = screenCenter + (screenPos3 - screenCenter) * 0.9f;
+                    screenPos4 = screenCenter + (screenPos4 - screenCenter) * 0.9f;
+
+                    glm::vec2 screenVertices[] = { screenPos1, screenPos2, screenPos3, screenPos4 };
+
+                    DrawShapePolygon(screenVertices, 4, glm::vec4(0.4f, 0.4f, 1.0f, 0.5f) * 1.1f);
+
+                    SmallString text = StringFormat::Small("%d,%d", x, y);
+                    DrawTextSetHalign(FONT_HALIGN_CENTER);
+                    DrawText(text, screenCenter);
+                }
+            }
+        }
 
         //glm::vec2 mousePos = app->input->mousePosPixels;
         glm::vec2 pos = GetMousePosWorldSpace();
@@ -716,6 +770,23 @@ namespace atto {
             }
         }
         
+        PolygonCollider blockerCollider = {};
+
+        glm::vec2 tilePos1 = glm::vec2(0, 0);
+        glm::vec2 tilePos2 = glm::vec2(1, 0);
+        glm::vec2 tilePos3 = glm::vec2(0, 1);
+        glm::vec2 tilePos4 = glm::vec2(1, 1);
+
+        glm::vec2 worldPos1 = MapTilePosToWorldPos(map, tilePos1);
+        glm::vec2 worldPos2 = MapTilePosToWorldPos(map, tilePos2);
+        glm::vec2 worldPos3 = MapTilePosToWorldPos(map, tilePos3);
+        glm::vec2 worldPos4 = MapTilePosToWorldPos(map, tilePos4);
+
+        blockerCollider.vertices.Add(worldPos1);
+        blockerCollider.vertices.Add(worldPos3);
+        blockerCollider.vertices.Add(worldPos4);
+        blockerCollider.vertices.Add(worldPos2);
+
         for (i32 y = 0; y < map->mapHeight; y++) {
             for (i32 x = 0; x < map->mapWidth; x++) {
                 i32 index = y * map->mapWidth + x;
@@ -725,13 +796,14 @@ namespace atto {
                     Entity entity = {};
                     entity.pos = MapTilePosToWorldPos(map, glm::vec2(x, y));
 
-                    entity.blocker.active = true;
-                    entity.blocker.collider.vertices.Add(glm::vec2(-16, -9));
-                    entity.blocker.collider.vertices.Add(glm::vec2(0, -16));
-                    entity.blocker.collider.vertices.Add(glm::vec2(16, -9));
-                    entity.blocker.collider.vertices.Add(glm::vec2(16, 7));
-                    entity.blocker.collider.vertices.Add(glm::vec2(0, 15));
-                    entity.blocker.collider.vertices.Add(glm::vec2(-16, 7));
+                    entity.blocker.isBlocker = true;
+                    entity.blocker.collider = blockerCollider;
+                    //entity.blocker.collider.vertices.Add(glm::vec2(-16, -9));
+                    //entity.blocker.collider.vertices.Add(glm::vec2(0, -16));
+                    //entity.blocker.collider.vertices.Add(glm::vec2(16, -9));
+                    //entity.blocker.collider.vertices.Add(glm::vec2(16, 7));
+                    //entity.blocker.collider.vertices.Add(glm::vec2(0, 15));
+                    //entity.blocker.collider.vertices.Add(glm::vec2(-16, 7));
 
                     entity.sprite1.active = true;
                     entity.sprite1.sprite = GetSpriteAsset(AssetId::Create("tile_blocker"));
@@ -792,6 +864,15 @@ namespace atto {
         world.x = (tilePos.x - tilePos.y) *  (f32)map->tileHalfWidth;
         world.y = -((tilePos.x + tilePos.y) * (f32)map->tileHalfHeight);
         return world;
+    }
+
+    glm::vec2 LeEngine::MapWorldPosToTilePos(Map* map, glm::vec2 worldPos) {
+        glm::vec2 tilePos;
+        tilePos.x = -(worldPos.x / (f32)map->tileHalfWidth + worldPos.y / (f32)map->tileHalfHeight) * 0.5f;
+        tilePos.y = -(worldPos.y / (f32)map->tileHalfHeight - (worldPos.x / (f32)map->tileHalfWidth)) * 0.5f;
+        tilePos.x = floor(tilePos.x);
+        tilePos.y = floor(tilePos.y);
+        return tilePos;
     }
 
     const void* LeEngine::LoadEngineAsset(AssetId id, AssetType type) {
@@ -1193,12 +1274,19 @@ namespace atto {
 
         const i32 polyCount = Geometry::Triangulate(polygon, cmd.poly.GetData(), cmd.poly.GetCapcity());
         cmd.poly.SetCount(polyCount);
-        for (i32 i = 0; i < cmd.poly.GetCount(); i++) {
-            cmd.poly[i] = WorldPosToScreenPos(cmd.poly[i]);
-        }
 
         cmd.color = color;
         DrawShapeAddCommand(cmd);
+    }
+
+    void LeEngine::DrawShapePolygon(const glm::vec2* vertices, i32 vertexCount, const glm::vec4& color /*= glm::vec4(1, 1, 1, 1)*/) {
+        PolygonCollider p = {};
+        Assert(vertexCount < p.vertices.GetCapcity(), "Too many verts for draw polygon, need a better solution for this!");
+        for (i32 vertexIndex = 0; vertexIndex < vertexCount; vertexIndex++) {
+            p.vertices.Add(vertices[vertexIndex]);
+        }
+
+        DrawShapePolygon(p, color);
     }
 
     void LeEngine::DrawShapeAddCommand(const DrawShapeCommand& cmd) {

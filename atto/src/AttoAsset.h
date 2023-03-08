@@ -344,7 +344,7 @@ namespace atto
     struct ShapeRenderingState {
         ShaderProgram                       program;
         VertexBuffer                        vertexBuffer;
-        FixedList<DrawShapeCommand, 256>    commands;
+        FixedList<DrawShapeCommand, 1024>   commands;
     };
 
     struct UIRenderingState {
@@ -492,8 +492,11 @@ namespace atto
         i32         health;
     };
     
-    struct Blocker {
-        bool                active;
+    struct MapTile {
+        i32                 tileX;
+        i32                 tileY;
+        glm::vec2           worldPos;
+        bool                isBlocker;
         PolygonCollider     collider;
     };
 
@@ -506,7 +509,7 @@ namespace atto
         EntitySprite    sprite1;
         EntitySprite    sprite2;
         Unit            unit;
-        Blocker         blocker;
+        MapTile         blocker;
     };
 
     struct Map {
@@ -546,6 +549,7 @@ namespace atto
         Entity*                             MapGetEntity(const EntityId &id);
         void                                MapDestroyEntity(Entity* entity);
         glm::vec2                           MapTilePosToWorldPos(Map *map, glm::vec2 tilePos);
+        glm::vec2                           MapWorldPosToTilePos(Map *map, glm::vec2 worldPos);
 
         BoxBounds                           EntityGetBoundingBox(const Entity& entity);
 
@@ -600,6 +604,7 @@ namespace atto
         void                                DrawShapeRectCenterDim(glm::vec2 center, glm::vec2 dim);
         void                                DrawShapeCircle(glm::vec2 center, f32 radius, const glm::vec4& color = glm::vec4(1, 1, 1, 1));
         void                                DrawShapeRoundRect(glm::vec2 bl, glm::vec2 tr, f32 radius = 10.0f);
+        void                                DrawShapePolygon(const glm::vec2 * vertices, i32 vertexCount, const glm::vec4& color = glm::vec4(1, 1, 1, 1));
         void                                DrawShapePolygon(const PolygonCollider& polygon, const glm::vec4& color = glm::vec4(1, 1, 1, 1));
         void                                DrawShapeAddCommand(const DrawShapeCommand& cmd);
         void                                DrawShapeClearCommands();
