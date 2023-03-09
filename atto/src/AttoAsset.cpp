@@ -500,26 +500,36 @@ namespace atto {
 
     }
 
+    static i32 CompareSpriteDrawCommand(const void* a, const void* b) {
+        const DrawSpriteCommand* va = (const DrawSpriteCommand*)(a);
+        const DrawSpriteCommand* vb = (const DrawSpriteCommand*)(b);
+        return va->tileIndex < vb->tileIndex ? -1 : 1;
+    }
+
     void LeEngine::Render(AppState* app) {
         //ProfilerClock profilerClock("Render");
 
         DrawClearSurface();
         DrawEnableAlphaBlending();
         //DrawSprite(AssetId::Creaste("starfield_02"), glm::vec2(0, 0), 0, 0);
-
+        DrawSpriteClearCommands();
+        
         const i32 entityCapcity = currentMap->groundTileEntities.GetCapcity();
         for (i32 entityIndex = 0; entityIndex < entityCapcity; entityIndex++) {
             Entity& entity = currentMap->groundTileEntities[entityIndex];
             if (entity.sprite1.active) {
-                DrawSprite(entity.sprite1.sprite, entity.pos, entity.rotation, 0);
+                DrawSprite(entity.sprite1.sprite, entity.pos, entity.rotation, 0, MapWorldPosToTilePos(currentMap, entity.pos));
             }
         }
+
+        DrawSpriteRender();
+        DrawSpriteClearCommands();
 
         const i32 blockerCapcity = currentMap->blockerTileEntities.GetCapcity();
         for (i32 entityIndex = 0; entityIndex < entityCapcity; entityIndex++) {
             Entity& entity = currentMap->blockerTileEntities[entityIndex];
             if (entity.sprite1.active) {
-                DrawSprite(entity.sprite1.sprite, entity.pos, entity.rotation, 0);
+                DrawSprite(entity.sprite1.sprite, entity.pos, entity.rotation, 0, MapWorldPosToTilePos(currentMap, entity.pos));
             }
         }
 
@@ -528,14 +538,18 @@ namespace atto {
             Entity& entity = currentMap->unitEntities[entityIndex];
             if (entity.unit.active && entity.unit.isSelected) {
                 if (entity.sprite2.active) {
-                    DrawSprite(entity.sprite2.sprite, entity.pos, entity.rotation, 0);
+                    DrawSprite(entity.sprite2.sprite, entity.pos, entity.rotation, 0, MapWorldPosToTilePos(currentMap, entity.pos));
                 }
             }
 
             if (entity.sprite1.active) {
-                DrawSprite(entity.sprite1.sprite, entity.pos, entity.rotation, entity.sprite1.currentFrameIndex);
+                DrawSprite(entity.sprite1.sprite, entity.pos, entity.rotation, entity.sprite1.currentFrameIndex, MapWorldPosToTilePos(currentMap, entity.pos));
             }
         }
+
+        qsort(spriteRenderingState.commands.GetData(), spriteRenderingState.commands.GetCount(), sizeof(DrawSpriteCommand), CompareSpriteDrawCommand);
+
+        DrawSpriteRender();
 
         if (debugDrawTileLocation.value) {
             for (i32 y = 0; y < currentMap->mapHeight - 1; y++) {
@@ -566,9 +580,15 @@ namespace atto {
 
                     DrawShapePolygon(screenVertices, 4, glm::vec4(0.4f, 0.4f, 1.0f, 0.5f) * 1.1f);
 
+#if 0
                     SmallString text = StringFormat::Small("%d,%d", x, y);
                     DrawTextSetHalign(FONT_HALIGN_CENTER);
                     DrawText(text, screenCenter);
+#else 
+                    SmallString text = StringFormat::Small("%d", MapTilePosToIndex(currentMap, x, y));
+                    DrawTextSetHalign(FONT_HALIGN_CENTER);
+                    DrawText(text, screenCenter);
+#endif
                 }
             }
         }
@@ -873,6 +893,16 @@ namespace atto {
         tilePos.x = floor(tilePos.x);
         tilePos.y = floor(tilePos.y);
         return tilePos;
+    }
+
+    i32 LeEngine::MapTilePosToIndex(Map* map, glm::vec2 tilePos) {
+        i32 index = (i32)tilePos.y * map->mapWidth + (i32)tilePos.x;
+        return index;
+    }
+
+    i32 LeEngine::MapTilePosToIndex(Map* map, i32 x, i32 y) {
+        i32 index = y * map->mapWidth + x;
+        return index;
     }
 
     const void* LeEngine::LoadEngineAsset(AssetId id, AssetType type) {
@@ -1407,88 +1437,111 @@ namespace atto {
         }
     }
 
-    void LeEngine::DrawSprite(const AssetId& id, glm::vec2 pos, f32 rotation, i32 frameIndex) {
-        SpriteAsset *sprite = GetSpriteAsset(id);
-        
-        if (sprite == nullptr) {
-            ATTOERROR("SPRITE: Could not find sprite asset");
-            return;
-        }
-
-        DrawSprite(sprite, pos, rotation, frameIndex);
+    DrawSpriteCommand LeEngine::DrawSpriteCreateCommand() {
+        DrawSpriteCommand cmd = {};
+        cmd.color = glm::vec4(1, 1, 1, 1);
+        return cmd;
     }
 
     void LeEngine::DrawSprite(SpriteAsset* sprite, glm::vec2 pos, f32 rotation, i32 frameIndex) {
-        Assert(sprite != nullptr, "SPRITE: Sprite is null");
+        DrawSprite(sprite, pos, rotation, frameIndex, glm::vec2(-1, -1));
+    }
 
-        if (sprite->texture == nullptr) {
-            sprite->texture = LoadTextureAsset(sprite->textureId);
-            if (sprite->texture == nullptr) {
-                ATTOERROR("SPRITE: Could not load texture asset");
-                return;
+    void LeEngine::DrawSprite(SpriteAsset* spriteAsset, glm::vec2 pos, f32 rotation, i32 frameIndex, glm::vec2 tilePos) {
+        DrawSpriteCommand cmd = DrawSpriteCreateCommand();
+        cmd.spriteAsset = spriteAsset;
+        cmd.position = pos;
+        cmd.rotation = rotation;
+        cmd.frameIndex = frameIndex;
+        cmd.tilePos = tilePos;
+        cmd.tileIndex = MapTilePosToIndex(currentMap, tilePos);
+        DrawSpriteAddCommand(cmd);
+    }
+
+    void LeEngine::DrawSpriteAddCommand(const DrawSpriteCommand& cmd) {
+        spriteRenderingState.commands.Add(cmd);
+    }
+
+    void LeEngine::DrawSpriteClearCommands() {
+        spriteRenderingState.commands.Clear();
+    }
+
+    void LeEngine::DrawSpriteRender() {
+        const i32 commandCount = spriteRenderingState.commands.GetCount();
+        for (i32 commandIndex = 0; commandIndex < commandCount; commandIndex++) {
+            const DrawSpriteCommand& cmd = spriteRenderingState.commands[commandIndex];
+            Assert(cmd.spriteAsset != nullptr, "SPRITE: Sprite is null");
+
+            if (cmd.spriteAsset->texture == nullptr) {
+                cmd.spriteAsset->texture = LoadTextureAsset(cmd.spriteAsset->textureId);
+                if (cmd.spriteAsset->texture == nullptr) {
+                    ATTOERROR("SPRITE: Could not load texture asset");
+                    return;
+                }
             }
+
+            ShaderProgramBind(&spriteRenderingState.program);
+            ShaderProgramSetMat4("p", cameraProjection * cameraView);
+            ShaderProgramSetSampler("texture0", 0);
+            ShaderProgramSetTexture(0, cmd.spriteAsset->texture->textureHandle);
+
+            f32 xpos = 0.0f;
+            f32 ypos = 0.0f;
+
+            f32 scaleX = 1;
+            f32 scaleY = 1;
+
+            //sprite->frameSize.y = (f32)sprite->texture->height;
+            //sprite->frameSize.x = (f32)sprite->texture->width;
+
+            f32 w = cmd.spriteAsset->frameSize.x * scaleX;
+            f32 h = cmd.spriteAsset->frameSize.y * scaleY;
+
+            if (cmd.spriteAsset->origin == SPRITE_ORIGIN_CENTER) {
+                xpos -= w / 2.0f;
+                ypos -= h / 2.0f;
+            }
+            else if (cmd.spriteAsset->origin == SPRITE_ORIGIN_BOTTOM_CENTER) {
+                xpos -= w / 2.0f;
+            }
+
+            f32 rotation = cmd.rotation;
+            glm::mat2 rotationMatrix = glm::mat2(cos(rotation), -sin(rotation), sin(rotation), cos(rotation));
+            glm::vec2 vertex1 = rotationMatrix * glm::vec2(xpos, ypos + h);
+            glm::vec2 vertex2 = rotationMatrix * glm::vec2(xpos, ypos);
+            glm::vec2 vertex3 = rotationMatrix * glm::vec2(xpos + w, ypos);
+            glm::vec2 vertex4 = rotationMatrix * glm::vec2(xpos + w, ypos + h);
+
+            vertex1 += cmd.position;
+            vertex2 += cmd.position;
+            vertex3 += cmd.position;
+            vertex4 += cmd.position;
+
+            glm::vec2 uv0 = cmd.spriteAsset->uv0;
+            glm::vec2 uv1 = cmd.spriteAsset->uv1;
+
+            uv0.x = (cmd.frameIndex * cmd.spriteAsset->frameSize.x) / cmd.spriteAsset->texture->width;
+            uv1.x = (cmd.frameIndex * cmd.spriteAsset->frameSize.x + cmd.spriteAsset->frameSize.x) / cmd.spriteAsset->texture->width;
+
+            glm::vec4 color = spriteRenderingState.color;
+
+            f32 vertices[6][2 + 2 + 4] = {
+                { vertex1.x,  vertex1.y,    uv0.x, uv0.y,    color.r, color.g, color.b, color.a },
+                { vertex2.x,  vertex2.y,    uv0.x, uv1.y,    color.r, color.g, color.b, color.a },
+                { vertex3.x,  vertex3.y,    uv1.x, uv1.y,    color.r, color.g, color.b, color.a },
+
+                { vertex1.x, vertex1.y,    uv0.x, uv0.y,    color.r, color.g, color.b, color.a },
+                { vertex3.x, vertex3.y,    uv1.x, uv1.y,    color.r, color.g, color.b, color.a },
+                { vertex4.x, vertex4.y,    uv1.x, uv0.y,    color.r, color.g, color.b, color.a }
+            };
+
+            static_assert(sizeof(vertices) == sizeof(SpriteVertex) * 6, "Sprite vertex size mismatch");
+
+            glBindVertexArray(spriteRenderingState.vertexBuffer.vao);
+            VertexBufferUpdate(spriteRenderingState.vertexBuffer, 0, sizeof(vertices), vertices);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindVertexArray(0);
         }
-
-        ShaderProgramBind(&spriteRenderingState.program);
-        ShaderProgramSetMat4("p", cameraProjection * cameraView);
-        ShaderProgramSetSampler("texture0", 0);
-        ShaderProgramSetTexture(0, sprite->texture->textureHandle);
-
-        f32 xpos = 0.0f;
-        f32 ypos = 0.0f;
-
-        f32 scaleX = 1;
-        f32 scaleY = 1;
-
-        //sprite->frameSize.y = (f32)sprite->texture->height;
-        //sprite->frameSize.x = (f32)sprite->texture->width;
-
-        f32 w = sprite->frameSize.x * scaleX;
-        f32 h = sprite->frameSize.y * scaleY;
-
-        if (sprite->origin == SPRITE_ORIGIN_CENTER) {
-            xpos -= w / 2.0f;
-            ypos -= h / 2.0f;
-        }
-        else if (sprite->origin == SPRITE_ORIGIN_BOTTOM_CENTER) {
-            xpos -= w / 2.0f;
-        }
-        
-        glm::mat2 rotationMatrix = glm::mat2(cos(rotation), -sin(rotation), sin(rotation), cos(rotation));
-        glm::vec2 vertex1 = rotationMatrix * glm::vec2(xpos, ypos + h);
-        glm::vec2 vertex2 = rotationMatrix * glm::vec2(xpos, ypos);
-        glm::vec2 vertex3 = rotationMatrix * glm::vec2(xpos + w, ypos);
-        glm::vec2 vertex4 = rotationMatrix * glm::vec2(xpos + w, ypos + h);
-        
-        vertex1 += pos;
-        vertex2 += pos;
-        vertex3 += pos;
-        vertex4 += pos;
-
-        glm::vec2 uv0 = sprite->uv0;
-        glm::vec2 uv1 = sprite->uv1;
-
-        uv0.x = (frameIndex * sprite->frameSize.x) / sprite->texture->width;
-        uv1.x = (frameIndex * sprite->frameSize.x + sprite->frameSize.x) / sprite->texture->width;
-
-        glm::vec4 color = spriteRenderingState.color;
-
-        f32 vertices[6][2 + 2 + 4] = {
-            { vertex1.x,  vertex1.y,    uv0.x, uv0.y,    color.r, color.g, color.b, color.a },
-            { vertex2.x,  vertex2.y,    uv0.x, uv1.y,    color.r, color.g, color.b, color.a },
-            { vertex3.x,  vertex3.y,    uv1.x, uv1.y,    color.r, color.g, color.b, color.a },
-
-            { vertex1.x, vertex1.y,    uv0.x, uv0.y,    color.r, color.g, color.b, color.a },
-            { vertex3.x, vertex3.y,    uv1.x, uv1.y,    color.r, color.g, color.b, color.a },
-            { vertex4.x, vertex4.y,    uv1.x, uv0.y,    color.r, color.g, color.b, color.a }
-        };
-
-        static_assert(sizeof(vertices) == sizeof(SpriteVertex) * 6, "Sprite vertex size mismatch");
-
-        glBindVertexArray(spriteRenderingState.vertexBuffer.vao);
-        VertexBufferUpdate(spriteRenderingState.vertexBuffer, 0, sizeof(vertices), vertices);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);
     }
 
     void LeEngine::DrawTextSetFont(FontAssetId id) {

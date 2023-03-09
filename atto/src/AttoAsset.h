@@ -359,10 +359,21 @@ namespace atto
         glm::vec4 color;
     };
 
-    struct SpriteRenderingState {
+    struct DrawSpriteCommand {
+        SpriteAsset*        spriteAsset;
+        glm::vec2           tilePos;
         glm::vec4           color;
-        ShaderProgram       program;
-        VertexBuffer        vertexBuffer;
+        glm::vec2           position;
+        f32                 rotation;
+        i32                 frameIndex;
+        i32                 tileIndex;
+    };
+
+    struct SpriteRenderingState {
+        glm::vec4                           color;
+        ShaderProgram                       program;
+        VertexBuffer                        vertexBuffer;
+        FixedList<DrawSpriteCommand, 1024>  commands;
     };
 
     enum FontHAlignment {
@@ -550,6 +561,8 @@ namespace atto
         void                                MapDestroyEntity(Entity* entity);
         glm::vec2                           MapTilePosToWorldPos(Map *map, glm::vec2 tilePos);
         glm::vec2                           MapWorldPosToTilePos(Map *map, glm::vec2 worldPos);
+        i32                                 MapTilePosToIndex(Map* map, glm::vec2 tilePos);
+        i32                                 MapTilePosToIndex(Map* map, i32 x, i32 y);
 
         BoxBounds                           EntityGetBoundingBox(const Entity& entity);
 
@@ -610,6 +623,13 @@ namespace atto
         void                                DrawShapeClearCommands();
         void                                DrawShapeRender();
 
+        DrawSpriteCommand                   DrawSpriteCreateCommand();
+        void                                DrawSprite(SpriteAsset* spriteAsset, glm::vec2 pos, f32 rotation, i32 frameIndex);
+        void                                DrawSprite(SpriteAsset* spriteAsset, glm::vec2 pos, f32 rotation, i32 frameIndex, glm::vec2 tilePos);
+        void                                DrawSpriteAddCommand(const DrawSpriteCommand& cmd);
+        void                                DrawSpriteClearCommands();
+        void                                DrawSpriteRender();
+
         void                                InitializeUIRendering(AppState* app);
         void                                ShutdownUIRendering(AppState* app);
         void                                DrawUINewFrame(AppState* app);
@@ -617,11 +637,7 @@ namespace atto
         void                                DrawUIDisplayJson(nlohmann::json j);
         void                                DrawUIDemoJSON();
         void                                DrawUIDemoWindow();
-
-        void                                DrawSpriteSetColor(glm::vec4 color);
-        void                                DrawSprite(const AssetId& id, glm::vec2 pos, f32 rotation, i32 frameIndex);
-        void                                DrawSprite(SpriteAsset* spriteAsset, glm::vec2 pos, f32 rotation, i32 frameIndex);
-
+        
         void                                DrawTextSetFont(FontAssetId id);
         void                                DrawTextSetColor(glm::vec4 color);
         void                                DrawTextSetHalign(FontHAlignment hAlignment);
