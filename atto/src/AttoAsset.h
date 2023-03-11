@@ -509,6 +509,9 @@ namespace atto
         glm::vec2           worldPos;
         bool                isBlocker;
         PolygonCollider     collider;
+        bool                reached;
+        bool                pathed;
+        MapTile*            parent;
     };
 
     struct Entity {
@@ -520,20 +523,22 @@ namespace atto
         EntitySprite    sprite1;
         EntitySprite    sprite2;
         Unit            unit;
-        MapTile         blocker;
+        MapTile         tile;
     };
 
     struct Map {
-        i32                         mapWidth;
-        i32                         mapHeight;
-        i32                         tileWidth;
-        i32                         tileHeight;
-        i32                         tileHalfWidth;
-        i32                         tileHalfHeight;
+        static const i32                    TILE_CAPCITY = 1024;
+
+        i32                                 mapWidth;
+        i32                                 mapHeight;
+        i32                                 tileWidth;
+        i32                                 tileHeight;
+        i32                                 tileHalfWidth;
+        i32                                 tileHalfHeight;
         
-        FixedList<Entity, 1024>     groundTileEntities;
-        FixedList<Entity, 1024>     blockerTileEntities;
-        FixedList<Entity, 2048>     unitEntities;
+        FixedList<Entity, TILE_CAPCITY>     groundTileEntities;
+        FixedList<Entity, TILE_CAPCITY>     blockerTileEntities;
+        FixedList<Entity, 2048>             unitEntities;
     };
 
     class LeEngine {
@@ -563,6 +568,10 @@ namespace atto
         glm::vec2                           MapWorldPosToTilePos(Map *map, glm::vec2 worldPos);
         i32                                 MapTilePosToIndex(Map* map, glm::vec2 tilePos);
         i32                                 MapTilePosToIndex(Map* map, i32 x, i32 y);
+        MapTile*                            MapGetTile(Map* map, glm::vec2 tilePos);
+        MapTile*                            MapGetTile(Map* map, i32 x, i32 y);
+        void                                MapGetTileNeighbors(Map* map, MapTile *tile, FixedList<MapTile*, 8>& neighbors);
+        void                                MapGetTileNeighbors(Map* map, i32 x, i32 y, FixedList<MapTile*, 8> &neighbors);
 
         BoxBounds                           EntityGetBoundingBox(const Entity& entity);
 

@@ -798,7 +798,7 @@ namespace atto
     T* atto::FixedQueue<T, capcity>::Enqueue(const T& value) {
         Assert(count < capcity, "FixedQueue, queue is full");
         
-        if (count == capacity) {
+        if (count == capcity) {
             return nullptr;
         }
         
@@ -817,7 +817,7 @@ namespace atto
         }
 
         T result = data[head];
-        head = (head + 1) % capacity;
+        head = (head + 1) % capcity;
         count--;
         return result;
     }

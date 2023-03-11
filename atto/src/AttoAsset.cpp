@@ -321,10 +321,53 @@ namespace atto {
                             entity.unit.target.type = UNIT_TARGET_TYPE_GROUND_POS;
                             entity.unit.target.groundPos = mousePosWorldSpace;
 
-                            //static FixedQueue<MapTile, 1024> frontier = {};
-                            //frontier.Clear();
-                            //MapTile startingBlocker = entity.pos;
-                            //frontier.Enqueue();
+                            for (i32 i = 0; i < currentMap->blockerTileEntities.GetCapcity(); i++) {
+                                currentMap->blockerTileEntities[i].tile.parent = nullptr;
+                                currentMap->blockerTileEntities[i].tile.reached = false;
+                                currentMap->blockerTileEntities[i].tile.pathed = false;
+                            }
+                            
+                            static FixedQueue<MapTile*,  Map::TILE_CAPCITY> frontier = {};
+                            frontier.Clear();
+
+                            glm::vec2 entityTilePos = MapWorldPosToTilePos(currentMap, entity.pos);
+                            MapTile* startingTile = MapGetTile(currentMap, entityTilePos);
+                            MapTile* endingTile = MapGetTile(currentMap, mousePosTileSpace);
+                            
+                            Assert(startingTile != nullptr, "Entity on invalid tile");
+                            if (endingTile != nullptr && startingTile != nullptr) {
+                                frontier.Enqueue(startingTile);
+
+                                bool pathFound = false;
+                                while (!frontier.IsEmpty()) {
+                                    MapTile* currentTile = frontier.Dequeue();
+                                    if (currentTile == endingTile) {
+                                        pathFound = true;
+                                        break;
+                                    }
+
+                                    FixedList<MapTile*, 8> neighbors = {};
+                                    MapGetTileNeighbors(currentMap, currentTile, neighbors);
+
+                                    const i32 neighborCount = neighbors.GetCount();
+                                    for (i32 neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++) {
+                                        MapTile* neighbor = neighbors[neighborIndex];
+                                        if (!neighbor->reached && !neighbor->isBlocker) {
+                                            neighbor->reached = true;
+                                            neighbor->parent = currentTile;
+                                            frontier.Enqueue(neighbor);
+                                        }
+                                    }
+                                }
+                                
+                                if (pathFound) {
+                                    MapTile* currentTile = endingTile->parent;
+                                    while (currentTile != startingTile) {
+                                        currentTile->pathed = true;
+                                        currentTile = currentTile->parent;
+                                    }
+                                }
+                            }
                             
                         }
                     }
@@ -452,7 +495,7 @@ namespace atto {
                 const i32 blockerCapcity = currentMap->blockerTileEntities.GetCapcity();
                 for (i32 i = 0; i < blockerCapcity; i++) {
                     Entity& blocker = currentMap->blockerTileEntities[i];
-                    if (blocker.blocker.isBlocker) {
+                    if (blocker.tile.isBlocker) {
                         const Circle currentUnitCollider = UnitGetCollider(entity);
                         const PolygonCollider blockerCollider = BlockerGetCollider(blocker);
 
@@ -480,13 +523,16 @@ namespace atto {
             const i32 blockerCapcity = currentMap->blockerTileEntities.GetCapcity();
             for (i32 blockerIndex = 0; blockerIndex < blockerCapcity; blockerIndex++) {
                 Entity& blocker = currentMap->blockerTileEntities[blockerIndex];
-                if (blocker.blocker.isBlocker) {
-                    PolygonCollider collider = blocker.blocker.collider;
+                if (blocker.tile.isBlocker) {
+                    PolygonCollider collider = blocker.tile.collider;
                     collider.Translate(blocker.pos);
+                    
                     for (i32 vertexIndex = 0; vertexIndex < collider.vertices.GetCount(); vertexIndex++) {
                         collider.vertices[vertexIndex] = WorldPosToScreenPos(collider.vertices[vertexIndex]);
                     }
-                    DrawShapePolygon(collider, glm::vec4(1.0f, 0.4f, 0.4f, 0.5f) * 1.1f);
+                    
+                    glm::vec4 color = glm::vec4(1.0f, 0.4f, 0.4f, 0.5f) * 1.1f;
+                    DrawShapePolygon(collider, color);
                 }
             }
         }
@@ -552,6 +598,14 @@ namespace atto {
         DrawSpriteRender();
 
         if (debugDrawTileLocation.value) {
+            const glm::vec2 mousePosWorldSpace = GetMousePosWorldSpace();
+            const glm::vec2 mousePosTileSpace = MapWorldPosToTilePos(currentMap, mousePosWorldSpace);
+            
+            DrawText(StringFormat::Small("%f,%f", mousePosWorldSpace.x, mousePosWorldSpace.y), glm::vec2(100, 50));
+            DrawText(StringFormat::Small("%f,%f", mousePosTileSpace.x, mousePosTileSpace.y), glm::vec2(100, 100));
+            
+            MapTile* hoveredTile = MapGetTile(currentMap, mousePosTileSpace);
+
             for (i32 y = 0; y < currentMap->mapHeight - 1; y++) {
                 for (i32 x = 0; x < currentMap->mapWidth - 1; x++) {
                     glm::vec2 tilePos1 = glm::vec2(x, y);
@@ -578,13 +632,22 @@ namespace atto {
 
                     glm::vec2 screenVertices[] = { screenPos1, screenPos2, screenPos3, screenPos4 };
 
-                    DrawShapePolygon(screenVertices, 4, glm::vec4(0.4f, 0.4f, 1.0f, 0.5f) * 1.1f);
+                    glm::vec4 color = glm::vec4(0.4f, 0.4f, 1.0f, 0.5f) * 1.1f;
+                    
+                    MapTile* currentTile = MapGetTile(currentMap, x, y);
+                    if (hoveredTile != nullptr && currentTile == hoveredTile) {
+                        if (hoveredTile->tileX == (i32)mousePosTileSpace.x &&
+                            hoveredTile->tileY == (i32)mousePosTileSpace.y) {
+                            color = glm::vec4(1.0f, 0.4f, 0.4f, 0.5f) * 1.5f;
+                        }
+                    }
 
+                    DrawShapePolygon(screenVertices, 4, color);
 #if 0
-                    SmallString text = StringFormat::Small("%d,%d", x, y);
+                    SmallString text = StringFormat::Small("%d,%d", currentTile->tileX, currentTile->tileY);
                     DrawTextSetHalign(FONT_HALIGN_CENTER);
                     DrawText(text, screenCenter);
-#else 
+#elif 1 
                     SmallString text = StringFormat::Small("%d", MapTilePosToIndex(currentMap, x, y));
                     DrawTextSetHalign(FONT_HALIGN_CENTER);
                     DrawText(text, screenCenter);
@@ -810,26 +873,21 @@ namespace atto {
         for (i32 y = 0; y < map->mapHeight; y++) {
             for (i32 x = 0; x < map->mapWidth; x++) {
                 i32 index = y * map->mapWidth + x;
+
+                Entity entity = {};
+                entity.tile.tileX = x;
+                entity.tile.tileY = y;
+                entity.pos = MapTilePosToWorldPos(map, glm::vec2(x, y));
                 
                 char tileType = mapData[index];
                 if (tileType == '1') {
-                    Entity entity = {};
-                    entity.pos = MapTilePosToWorldPos(map, glm::vec2(x, y));
-
-                    entity.blocker.isBlocker = true;
-                    entity.blocker.collider = blockerCollider;
-                    //entity.blocker.collider.vertices.Add(glm::vec2(-16, -9));
-                    //entity.blocker.collider.vertices.Add(glm::vec2(0, -16));
-                    //entity.blocker.collider.vertices.Add(glm::vec2(16, -9));
-                    //entity.blocker.collider.vertices.Add(glm::vec2(16, 7));
-                    //entity.blocker.collider.vertices.Add(glm::vec2(0, 15));
-                    //entity.blocker.collider.vertices.Add(glm::vec2(-16, 7));
-
+                    entity.tile.isBlocker = true;
+                    entity.tile.collider = blockerCollider;
                     entity.sprite1.active = true;
                     entity.sprite1.sprite = GetSpriteAsset(AssetId::Create("tile_blocker"));
-
-                    map->blockerTileEntities.Add(entity);
                 }
+
+                map->blockerTileEntities.Add(entity);
             }
         }
 
@@ -888,8 +946,8 @@ namespace atto {
 
     glm::vec2 LeEngine::MapWorldPosToTilePos(Map* map, glm::vec2 worldPos) {
         glm::vec2 tilePos;
-        tilePos.x = -(worldPos.x / (f32)map->tileHalfWidth + worldPos.y / (f32)map->tileHalfHeight) * 0.5f;
-        tilePos.y = -(worldPos.y / (f32)map->tileHalfHeight - (worldPos.x / (f32)map->tileHalfWidth)) * 0.5f;
+        tilePos.y = -(worldPos.x / (f32)map->tileHalfWidth + worldPos.y / (f32)map->tileHalfHeight) * 0.5f;
+        tilePos.x = -(worldPos.y / (f32)map->tileHalfHeight - (worldPos.x / (f32)map->tileHalfWidth)) * 0.5f;
         tilePos.x = floor(tilePos.x);
         tilePos.y = floor(tilePos.y);
         return tilePos;
@@ -903,6 +961,68 @@ namespace atto {
     i32 LeEngine::MapTilePosToIndex(Map* map, i32 x, i32 y) {
         i32 index = y * map->mapWidth + x;
         return index;
+    }
+
+    MapTile* LeEngine::MapGetTile(Map* map, glm::vec2 tilePos) {
+        i32 index = MapTilePosToIndex(map, tilePos);
+        if (index >= 0 && index < map->mapWidth * map->mapHeight) {
+            return &map->blockerTileEntities[index].tile;
+        }
+        return nullptr;
+    }
+
+    MapTile* LeEngine::MapGetTile(Map* map, i32 x, i32 y) {
+        i32 index = MapTilePosToIndex(map, x, y);
+        if (index >= 0 && index < map->mapWidth * map->mapHeight) {
+            return &map->blockerTileEntities[index].tile;
+        }
+        return nullptr;
+    }
+
+    void LeEngine::MapGetTileNeighbors(Map* map, i32 tileX, i32 tileY, FixedList<MapTile*, 8>& neighbors) {
+        MapTile* upTile = MapGetTile(currentMap, tileX, tileY + 1);
+        if (upTile != nullptr) {
+            neighbors.Add(upTile);
+        }
+
+        MapTile* downTile = MapGetTile(currentMap, tileX, tileY - 1);
+        if (downTile != nullptr) {
+            neighbors.Add(downTile);
+        }
+
+        MapTile* leftTile = MapGetTile(currentMap, tileX - 1, tileY);
+        if (leftTile != nullptr) {
+            neighbors.Add(leftTile);
+        }
+
+        MapTile* rightTile = MapGetTile(currentMap, tileX + 1, tileY);
+        if (rightTile != nullptr) {
+            neighbors.Add(rightTile);
+        }
+
+        MapTile* upLeftTile = MapGetTile(currentMap, tileX - 1, tileY + 1);
+        if (upLeftTile != nullptr) {
+            neighbors.Add(upLeftTile);
+        }
+        
+        MapTile* upRightTile = MapGetTile(currentMap, tileX + 1, tileY + 1);
+        if (upRightTile != nullptr) {
+            neighbors.Add(upRightTile);
+        }
+        
+        MapTile* downLeftTile = MapGetTile(currentMap, tileX - 1, tileY - 1);
+        if (downLeftTile != nullptr) {
+            neighbors.Add(downLeftTile);
+        }
+        
+        MapTile* downRightTile = MapGetTile(currentMap, tileX + 1, tileY - 1);
+        if (downRightTile != nullptr) {
+            neighbors.Add(downRightTile);
+        }
+    }
+
+    void LeEngine::MapGetTileNeighbors(Map* map, MapTile* tile, FixedList<MapTile*, 8>& neighbors) {
+        MapGetTileNeighbors(map, tile->tileX, tile->tileY, neighbors);
     }
 
     const void* LeEngine::LoadEngineAsset(AssetId id, AssetType type) {
@@ -960,7 +1080,7 @@ namespace atto {
     }
 
     PolygonCollider LeEngine::BlockerGetCollider(const Entity& entity) {
-        PolygonCollider collider = entity.blocker.collider;
+        PolygonCollider collider = entity.tile.collider;
         collider.Translate(entity.pos);
         
         return collider;
