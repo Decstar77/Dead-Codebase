@@ -39,10 +39,10 @@ namespace atto {
     const static DebugFunctionKey debugDrawUnitRanges(KEY_CODE_F2);
     const static DebugFunctionKey debugDrawTileLocation(KEY_CODE_F3);
 
-    static void FindAllFiles(const char* path, const char* extension, List<LargeString> &files) {
+    static void FindAllFiles(const char* path, const char* extension, List<LargeString>& files) {
         for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
             if (entry.path().extension() == extension) {
-                files.Add( LargeString::FromLiteral( entry.path().string().c_str() ));
+                files.Add(LargeString::FromLiteral(entry.path().string().c_str()));
             }
         }
     }
@@ -124,7 +124,7 @@ namespace atto {
             for (int j = 0; j < 1; j++) {
                 f32 x = (f32)12 * j - 12 * 2;
                 f32 y = (f32)-6 * j - 6 * 6;
-                
+
                 for (int i = 0; i < 1; i++) {
                     //entity.pos = glm::vec2(mainSurfaceWidth / 2, mainSurfaceHeight / 2);
                     Entity* entity = MapCreateEntity();
@@ -212,7 +212,7 @@ namespace atto {
             cameraZoom += app->deltaTime;
             DrawSurfaceResized(mainSurfaceWidth, mainSurfaceHeight);
         }
-        
+
         if (app->input->keys[KEY_CODE_2]) {
             cameraZoom -= app->deltaTime;
             DrawSurfaceResized(mainSurfaceWidth, mainSurfaceHeight);
@@ -259,16 +259,16 @@ namespace atto {
         const glm::vec2 mousePosWorldSpace = GetMousePosWorldSpace();
         const glm::vec2 mousePosTileSpace = MapWorldPosToTilePos(currentMap, mousePosWorldSpace);
 
-        const f32 roomWidth =  (f32)mainSurfaceWidth;
+        const f32 roomWidth = (f32)mainSurfaceWidth;
         const f32 roomHeight = (f32)mainSurfaceHeight;
-        
+
         const f32 halfRoomWidth = roomWidth / 2.0f;
         const f32 halfRoomHeight = roomHeight / 2.0f;
-        
+
         const i32 entityCapcity = currentMap->unitEntities.GetCapcity();
         for (i32 unitIndex = 0; unitIndex < entityCapcity; unitIndex++) {
             Entity& entity = currentMap->unitEntities[unitIndex];
-            
+
             if (entity.id == ENTITY_ID_INVALID) {
                 continue;
             }
@@ -326,14 +326,14 @@ namespace atto {
                                 currentMap->blockerTileEntities[i].tile.reached = false;
                                 currentMap->blockerTileEntities[i].tile.pathed = false;
                             }
-                            
-                            static FixedQueue<MapTile*,  Map::TILE_CAPCITY> frontier = {};
+
+                            static FixedQueue<MapTile*, Map::TILE_CAPCITY> frontier = {};
                             frontier.Clear();
 
                             glm::vec2 entityTilePos = MapWorldPosToTilePos(currentMap, entity.pos);
                             MapTile* startingTile = MapGetTile(currentMap, entityTilePos);
                             MapTile* endingTile = MapGetTile(currentMap, mousePosTileSpace);
-                            
+
                             Assert(startingTile != nullptr, "Entity on invalid tile");
                             if (endingTile != nullptr && startingTile != nullptr) {
                                 frontier.Enqueue(startingTile);
@@ -359,7 +359,7 @@ namespace atto {
                                         }
                                     }
                                 }
-                                
+
                                 if (pathFound) {
                                     MapTile* currentTile = endingTile->parent;
                                     while (currentTile != startingTile) {
@@ -368,7 +368,7 @@ namespace atto {
                                     }
                                 }
                             }
-                            
+
                         }
                     }
                 }
@@ -388,8 +388,8 @@ namespace atto {
                     const glm::vec2 toTarget = entity.unit.target.groundPos - entity.pos;
                     const f32 distanceToTarget = glm::length(toTarget);
                     const glm::vec2 direction = toTarget / distanceToTarget;
-                    
-                    
+
+
                     if (!ApproxEqual(distanceToTarget, 0.0f)) {
                         if (direction.x > 0.0f) {
                             entity.sprite1.currentFrameIndex = 0;
@@ -408,7 +408,7 @@ namespace atto {
                     }
                 }
                 else if (entity.unit.target.type == UNIT_TARGET_TYPE_UNIT) {
-                    if (Entity * otherEntity = MapGetEntity(entity.unit.target.unitId)) {
+                    if (Entity* otherEntity = MapGetEntity(entity.unit.target.unitId)) {
                         const glm::vec2 toTarget = otherEntity->pos - entity.pos;
                         const f32 distanceToTarget = glm::length(toTarget);
                         const glm::vec2 direction = toTarget / distanceToTarget;
@@ -526,11 +526,11 @@ namespace atto {
                 if (blocker.tile.isBlocker) {
                     PolygonCollider collider = blocker.tile.collider;
                     collider.Translate(blocker.pos);
-                    
+
                     for (i32 vertexIndex = 0; vertexIndex < collider.vertices.GetCount(); vertexIndex++) {
                         collider.vertices[vertexIndex] = WorldPosToScreenPos(collider.vertices[vertexIndex]);
                     }
-                    
+
                     glm::vec4 color = glm::vec4(1.0f, 0.4f, 0.4f, 0.5f) * 1.1f;
                     DrawShapePolygon(collider, color);
                 }
@@ -559,7 +559,7 @@ namespace atto {
         DrawEnableAlphaBlending();
         //DrawSprite(AssetId::Creaste("starfield_02"), glm::vec2(0, 0), 0, 0);
         DrawSpriteClearCommands();
-        
+
         const i32 entityCapcity = currentMap->groundTileEntities.GetCapcity();
         for (i32 entityIndex = 0; entityIndex < entityCapcity; entityIndex++) {
             Entity& entity = currentMap->groundTileEntities[entityIndex];
@@ -600,10 +600,10 @@ namespace atto {
         if (debugDrawTileLocation.value) {
             const glm::vec2 mousePosWorldSpace = GetMousePosWorldSpace();
             const glm::vec2 mousePosTileSpace = MapWorldPosToTilePos(currentMap, mousePosWorldSpace);
-            
+
             DrawText(StringFormat::Small("%f,%f", mousePosWorldSpace.x, mousePosWorldSpace.y), glm::vec2(100, 50));
             DrawText(StringFormat::Small("%f,%f", mousePosTileSpace.x, mousePosTileSpace.y), glm::vec2(100, 100));
-            
+
             MapTile* hoveredTile = MapGetTile(currentMap, mousePosTileSpace);
 
             for (i32 y = 0; y < currentMap->mapHeight - 1; y++) {
@@ -617,7 +617,7 @@ namespace atto {
                     glm::vec2 worldPos2 = MapTilePosToWorldPos(currentMap, tilePos2);
                     glm::vec2 worldPos3 = MapTilePosToWorldPos(currentMap, tilePos3);
                     glm::vec2 worldPos4 = MapTilePosToWorldPos(currentMap, tilePos4);
-                    
+
                     glm::vec2 screenPos1 = WorldPosToScreenPos(worldPos1);
                     glm::vec2 screenPos2 = WorldPosToScreenPos(worldPos2);
                     glm::vec2 screenPos3 = WorldPosToScreenPos(worldPos3);
@@ -633,7 +633,7 @@ namespace atto {
                     glm::vec2 screenVertices[] = { screenPos1, screenPos2, screenPos3, screenPos4 };
 
                     glm::vec4 color = glm::vec4(0.4f, 0.4f, 1.0f, 0.5f) * 1.1f;
-                    
+
                     MapTile* currentTile = MapGetTile(currentMap, x, y);
                     if (hoveredTile != nullptr && currentTile == hoveredTile) {
                         if (hoveredTile->tileX == (i32)mousePosTileSpace.x &&
@@ -658,11 +658,11 @@ namespace atto {
 
         //glm::vec2 mousePos = app->input->mousePosPixels;
         glm::vec2 pos = GetMousePosWorldSpace();
-        
+
         DrawUINewFrame(app);
         //DrawUIDemoJSON();
         //DrawUIDemoWindow();
-        
+
         //PolygonCollider p = {};
         //p.vertices.Add(  glm::vec2(-16, -9) );
         //p.vertices.Add(  glm::vec2(0, -16) );
@@ -678,7 +678,7 @@ namespace atto {
 
         DrawShapeRender();
         DrawUIRender(app);
-        
+
         DEBUGPushLine(glm::vec2(0, 0), glm::vec2(100, 0));
         DEBUGSubmit();
     }
@@ -757,7 +757,7 @@ namespace atto {
         glm::vec2 screenPos;
         screenPos.x = ((ndc.x + 1.0f) / 2.0f) * mainSurfaceWidth;
         screenPos.y = ((1.0f - ndc.y) / 2.0f) * mainSurfaceHeight;
-        
+
         return screenPos;
     }
 
@@ -771,10 +771,10 @@ namespace atto {
 
     glm::vec2 LeEngine::WorldDimensionToScreenDimension(glm::vec2 worldDim) {
         glm::vec4 clipSpacePos = cameraProjection * glm::vec4(worldDim, 0.0f, 1.0f);
-        
+
         f32 x = ((clipSpacePos.x + 1.0f) / 2.0f) * mainSurfaceWidth - mainSurfaceWidth / 2.0f;
         f32 y = ((clipSpacePos.y + 1.0f) / 2.0f) * mainSurfaceHeight - mainSurfaceHeight / 2.0f;
-        
+
         return glm::vec2(x, y);
     }
 
@@ -790,7 +790,7 @@ namespace atto {
 
     glm::vec2 LeEngine::UnitSteerSeek(const Entity& unitEntity, glm::vec2 target) {
         const f32 maxSpeed = 50.0f;
-        
+
         const f32 slowDownInnerRad = 2.0f;
         const f32 slowDownOuterRad = 14.0f;
 
@@ -818,7 +818,7 @@ namespace atto {
         glm::vec2 displacement;
         displacement.x = glm::cos(wanderAngle) * 25.0f;
         displacement.y = glm::sin(wanderAngle) * 25.0f;
-        
+
 
         static f32 angleArc = glm::radians(30.0f);
         wanderAngle += Random() * angleArc - angleArc * 0.5f;
@@ -852,7 +852,7 @@ namespace atto {
                 map->groundTileEntities.Add(entity);
             }
         }
-        
+
         PolygonCollider blockerCollider = {};
 
         glm::vec2 tilePos1 = glm::vec2(0, 0);
@@ -878,7 +878,7 @@ namespace atto {
                 entity.tile.tileX = x;
                 entity.tile.tileY = y;
                 entity.pos = MapTilePosToWorldPos(map, glm::vec2(x, y));
-                
+
                 char tileType = mapData[index];
                 if (tileType == '1') {
                     entity.tile.isBlocker = true;
@@ -893,7 +893,7 @@ namespace atto {
 
         const i32 entityCapcity = map->unitEntities.GetCapcity();
         for (i32 entityIndex = 0; entityIndex < entityCapcity; entityIndex++) {
-            Entity &entity = map->unitEntities[entityIndex];
+            Entity& entity = map->unitEntities[entityIndex];
             entity.id = ENTITY_ID_INVALID;
         }
     }
@@ -939,15 +939,15 @@ namespace atto {
 
     glm::vec2 LeEngine::MapTilePosToWorldPos(Map* map, glm::vec2 tilePos) {
         glm::vec2 world;
-        world.x = (tilePos.x - tilePos.y) *  (f32)map->tileHalfWidth;
+        world.x = (tilePos.x - tilePos.y) * (f32)map->tileHalfWidth;
         world.y = -((tilePos.x + tilePos.y) * (f32)map->tileHalfHeight);
         return world;
     }
 
     glm::vec2 LeEngine::MapWorldPosToTilePos(Map* map, glm::vec2 worldPos) {
         glm::vec2 tilePos;
-        tilePos.y = -(worldPos.x / (f32)map->tileHalfWidth + worldPos.y / (f32)map->tileHalfHeight) * 0.5f;
         tilePos.x = -(worldPos.y / (f32)map->tileHalfHeight - (worldPos.x / (f32)map->tileHalfWidth)) * 0.5f;
+        tilePos.y = -(worldPos.x / (f32)map->tileHalfWidth + worldPos.y / (f32)map->tileHalfHeight) * 0.5f;
         tilePos.x = floor(tilePos.x);
         tilePos.y = floor(tilePos.y);
         return tilePos;
@@ -1004,17 +1004,17 @@ namespace atto {
         if (upLeftTile != nullptr) {
             neighbors.Add(upLeftTile);
         }
-        
+
         MapTile* upRightTile = MapGetTile(currentMap, tileX + 1, tileY + 1);
         if (upRightTile != nullptr) {
             neighbors.Add(upRightTile);
         }
-        
+
         MapTile* downLeftTile = MapGetTile(currentMap, tileX - 1, tileY - 1);
         if (downLeftTile != nullptr) {
             neighbors.Add(downLeftTile);
         }
-        
+
         MapTile* downRightTile = MapGetTile(currentMap, tileX + 1, tileY - 1);
         if (downRightTile != nullptr) {
             neighbors.Add(downRightTile);
@@ -1036,42 +1036,42 @@ namespace atto {
 
             if (asset.id == id && asset.type == type) {
                 switch (asset.type) {
-                    case ASSET_TYPE_TEXTURE: {
-                        if (asset.texture.textureHandle != 0) {
-                            return &asset.texture;
-                        }
-                        
-                        if (LoadTextureAsset(asset.path.GetCStr(), asset.texture)) {
-                            ATTOTRACE("Loaded texture asset %s", asset.path.GetCStr());
-                            return &asset.texture;
-                        }
-                    } break;
-                    
-                    case ASSET_TYPE_AUDIO: {
-                        if (asset.audio.bufferHandle != 0) {
-                            return &asset.audio;
-                        }
-
-                        if (LoadAudioAsset(asset.path.GetCStr(), asset.audio)) {
-                            ATTOTRACE("Loaded audio sasset %s", asset.path.GetCStr());
-                            return &asset.audio;
-                        }
-                    } break;
-
-                    case ASSET_TYPE_FONT: {
-                        if (asset.font.textureHandle != 0) {
-                            return &asset.font;
-                        }
-
-                        if (LoadFontAsset(asset.path.GetCStr(), asset.font)) {
-                            ATTOTRACE("Loaded font asset %s", asset.path.GetCStr());
-                            return &asset.font;
-                        }
-                    } break;
-
-                    default: {
-                        Assert(0, "");
+                case ASSET_TYPE_TEXTURE: {
+                    if (asset.texture.textureHandle != 0) {
+                        return &asset.texture;
                     }
+
+                    if (LoadTextureAsset(asset.path.GetCStr(), asset.texture)) {
+                        ATTOTRACE("Loaded texture asset %s", asset.path.GetCStr());
+                        return &asset.texture;
+                    }
+                } break;
+
+                case ASSET_TYPE_AUDIO: {
+                    if (asset.audio.bufferHandle != 0) {
+                        return &asset.audio;
+                    }
+
+                    if (LoadAudioAsset(asset.path.GetCStr(), asset.audio)) {
+                        ATTOTRACE("Loaded audio sasset %s", asset.path.GetCStr());
+                        return &asset.audio;
+                    }
+                } break;
+
+                case ASSET_TYPE_FONT: {
+                    if (asset.font.textureHandle != 0) {
+                        return &asset.font;
+                    }
+
+                    if (LoadFontAsset(asset.path.GetCStr(), asset.font)) {
+                        ATTOTRACE("Loaded font asset %s", asset.path.GetCStr());
+                        return &asset.font;
+                    }
+                } break;
+
+                default: {
+                    Assert(0, "");
+                }
                 }
             }
         }
@@ -1082,14 +1082,14 @@ namespace atto {
     PolygonCollider LeEngine::BlockerGetCollider(const Entity& entity) {
         PolygonCollider collider = entity.tile.collider;
         collider.Translate(entity.pos);
-        
+
         return collider;
     }
 
     TextureAsset* LeEngine::LoadTextureAsset(TextureAssetId id) {
         return (TextureAsset*)LoadEngineAsset(id.ToRawId(), ASSET_TYPE_TEXTURE);
     }
-    
+
     FontAsset* LeEngine::LoadFontAsset(FontAssetId id) {
         return (FontAsset*)LoadEngineAsset(id.ToRawId(), ASSET_TYPE_FONT);
     }
@@ -1126,7 +1126,7 @@ namespace atto {
         }
 
         Speaker speaker = {};
-        
+
         if (speakers.GetCount() < speakers.GetCapcity()) {
             speaker.index = speakers.GetCount();
             alGenSources(1, &speaker.sourceHandle);
@@ -1276,10 +1276,10 @@ namespace atto {
         glViewport(0, 0, mainSurfaceWidth, mainSurfaceHeight);
 #elif 0
         // Widen the camera ???
-        mainSurfaceWidth  = (i32)((f32)w * 1.0f);
+        mainSurfaceWidth = (i32)((f32)w * 1.0f);
         mainSurfaceHeight = (i32)((f32)h * 1.0f);
         glViewport(0, 0, mainSurfaceWidth, mainSurfaceHeight);
-        
+
         cameraProjection = glm::ortho(0.0f, (f32)w, 0.0f, (f32)h, -1.0f, 1.0f);
 #elif 0
         // Stretch
@@ -1296,10 +1296,10 @@ namespace atto {
         f32 ratioX = (f32)w / (f32)mainSurfaceWidth;
         f32 ratioY = (f32)h / (f32)mainSurfaceHeight;
         f32 ratio = ratioX < ratioY ? ratioX : ratioY;
-        
+
         i32 viewWidth = (i32)(mainSurfaceWidth * ratio);
         i32 viewHeight = (i32)(mainSurfaceHeight * ratio);
-        
+
         i32 viewX = (i32)((w - mainSurfaceWidth * ratio) / 2);
         i32 viewY = (i32)((h - mainSurfaceHeight * ratio) / 2);
 
@@ -1312,18 +1312,18 @@ namespace atto {
 
         f32 right = (f32)mainSurfaceWidth / 2.0f;
         f32 left = -right;
-        
+
         f32 top = (f32)mainSurfaceHeight / 2.0f;
         f32 bottom = -top;
-        
+
         f32 n = 256 * cameraZoom;
 
         f32 aspectRatio = (f32)mainSurfaceWidth / (f32)mainSurfaceHeight;
-        left = - n * 0.5f * aspectRatio;
+        left = -n * 0.5f * aspectRatio;
         right = n * 0.5f * aspectRatio;
         bottom = -n * 0.5f;
         top = n * 0.5f;
-        
+
         left = roundf(left);
         right = roundf(right);
         bottom = roundf(bottom);
@@ -1377,7 +1377,7 @@ namespace atto {
         cmd.tr = dim / 2.0f;
         cmd.br = glm::vec2(cmd.tr.x, cmd.bl.y);
         cmd.tl = glm::vec2(cmd.bl.x, cmd.tr.y);
-        
+
         glm::mat2 rotationMatrix = glm::mat2(cos(rot), -sin(rot), sin(rot), cos(rot));
         cmd.bl = rotationMatrix * cmd.bl;
         cmd.tr = rotationMatrix * cmd.tr;
@@ -1418,7 +1418,7 @@ namespace atto {
         DrawShapeAddCommand(cmd);
     }
 
-    void LeEngine::DrawShapePolygon(const PolygonCollider& polygon, const glm::vec4& color ) {
+    void LeEngine::DrawShapePolygon(const PolygonCollider& polygon, const glm::vec4& color) {
         DrawShapeCommand cmd = DrawShapeCreateCommand();
         cmd.type = DRAW_SHAPE_TYPE_RECT_POLY;
 
@@ -1540,7 +1540,7 @@ namespace atto {
                 const f32* vertices = (f32*)cmd.poly.GetData();
                 const i32 vertexCount = cmd.poly.GetCount();
                 const i32 vertexSize = cmd.poly.GetCount() * sizeof(glm::vec2);
-                
+
                 ShaderProgramBind(&shapeRenderingState.program);
                 ShaderProgramSetMat4("p", cmd.projection);
                 ShaderProgramSetInt("mode", 0);
@@ -1764,7 +1764,7 @@ namespace atto {
         f32 y = entry.pos.y;
         const char* text = entry.text.GetCStr();
         const f32 textWidth = entry.textWidth;
-        
+
         if (entry.hAlignment == FONT_HALIGN_CENTER) {
             x -= textWidth / 2.0f;
         }
@@ -1927,13 +1927,13 @@ namespace atto {
         if (app->input->keys[KEY_CODE_F1]) {
             editorState.consoleOpen = true;
         }
-        
+
         if (editorState.consoleOpen) {
             editorState.consoleScroll += app->deltaTime;
             if (editorState.consoleScroll > 1) {
                 editorState.consoleScroll = 1;
             }
-            
+
             f32 target = 0.9f;
             f32 amount = Lerp(0.0f, target, editorState.consoleScroll);
 
@@ -1960,41 +1960,41 @@ namespace atto {
         glBufferData(GL_ARRAY_BUFFER, buffer.size, data, dyanmic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
 
         switch (layoutType) {
-            case VERTEX_LAYOUT_TYPE_SHAPE: {
-                buffer.stride = sizeof(ShapeVertex);
-                glEnableVertexAttribArray(0);
-                glVertexAttribPointer(0, 2, GL_FLOAT, false, buffer.stride, 0);
-            } break;
+        case VERTEX_LAYOUT_TYPE_SHAPE: {
+            buffer.stride = sizeof(ShapeVertex);
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 2, GL_FLOAT, false, buffer.stride, 0);
+        } break;
 
-            case VERTEX_LAYOUT_TYPE_SPRITE: {
-                buffer.stride = sizeof(SpriteVertex);
-                glEnableVertexAttribArray(0);
-                glEnableVertexAttribArray(1);
-                glEnableVertexAttribArray(2);
-                glVertexAttribPointer(0, 2, GL_FLOAT, false, buffer.stride, 0);
-                glVertexAttribPointer(1, 2, GL_FLOAT, false, buffer.stride, (void*)(2 * sizeof(f32)));
-                glVertexAttribPointer(2, 4, GL_FLOAT, false, buffer.stride, (void*)((2 + 2) * sizeof(f32)));
-            } break;
+        case VERTEX_LAYOUT_TYPE_SPRITE: {
+            buffer.stride = sizeof(SpriteVertex);
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(0, 2, GL_FLOAT, false, buffer.stride, 0);
+            glVertexAttribPointer(1, 2, GL_FLOAT, false, buffer.stride, (void*)(2 * sizeof(f32)));
+            glVertexAttribPointer(2, 4, GL_FLOAT, false, buffer.stride, (void*)((2 + 2) * sizeof(f32)));
+        } break;
 
-            case VERTEX_LAYOUT_TYPE_FONT: {
-                buffer.stride = sizeof(FontVertex);
-                glEnableVertexAttribArray(0);
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(0, 2, GL_FLOAT, false, buffer.stride, 0);
-                glVertexAttribPointer(1, 2, GL_FLOAT, false, buffer.stride, (void*)(2 * sizeof(f32)));
-            } break;
+        case VERTEX_LAYOUT_TYPE_FONT: {
+            buffer.stride = sizeof(FontVertex);
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(0, 2, GL_FLOAT, false, buffer.stride, 0);
+            glVertexAttribPointer(1, 2, GL_FLOAT, false, buffer.stride, (void*)(2 * sizeof(f32)));
+        } break;
 
-            case VERTEX_LAYOUT_TYPE_DEBUG_LINE: {
-                buffer.stride = sizeof(DebugLineVertex);
-                glEnableVertexAttribArray(0);
-                glEnableVertexAttribArray(1);
-                glVertexAttribPointer(0, 2, GL_FLOAT, false, buffer.stride, 0);
-                glVertexAttribPointer(1, 4, GL_FLOAT, false, buffer.stride, (void*)(2 * sizeof(f32)));
-            } break;
+        case VERTEX_LAYOUT_TYPE_DEBUG_LINE: {
+            buffer.stride = sizeof(DebugLineVertex);
+            glEnableVertexAttribArray(0);
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(0, 2, GL_FLOAT, false, buffer.stride, 0);
+            glVertexAttribPointer(1, 4, GL_FLOAT, false, buffer.stride, (void*)(2 * sizeof(f32)));
+        } break;
 
-            default: {
-                Assert(0, "");
-            }
+        default: {
+            Assert(0, "");
+        }
         }
 
         glBindVertexArray(0);
@@ -2170,12 +2170,12 @@ namespace atto {
             } break;
             case DirectoryChangeType::FILE_MODIFIED: {
                 ATTOINFO("File modified: %s", change.path);
-                
+
                 if (change.path.EndsWith(".png")) {
                     change.path.StripFileExtension();
                     change.path.RemovePathPrefix(basePathSprites.GetCStr());
                     AssetId id = AssetId::Create(change.path.GetCStr());
-                    
+
                 }
 
             } break;
@@ -2263,11 +2263,11 @@ namespace atto {
         std::ifstream spritesRegisterFile("assets/sprites.json");
         if (spritesRegisterFile.is_open()) {
             nlohmann::json j = nlohmann::json::parse(spritesRegisterFile);
-            
+
             for (nlohmann::json::iterator it = j.begin(); it != j.end(); ++it) {
                 std::string spriteName = it.key();
                 nlohmann::json spriteData = it.value();
-                
+
                 std::string texture = spriteData["texture"].get<std::string>();
 
                 SpriteAsset sprite = SpriteAsset::CreateDefault();
@@ -2408,7 +2408,7 @@ namespace atto {
         audioAsset.sizeBytes = (i32)loadedData.size();
 
         audioAsset.bufferHandle = SubmitAudioClip(audioAsset.sizeBytes, loadedData.data(), audioAsset.channels, audioAsset.bitDepth, audioAsset.sampleRate);
-        
+
         return true;
     }
 
@@ -2426,7 +2426,7 @@ namespace atto {
         audioAsset.sizeBytes = decoded * audioAsset.channels * sizeof(i16);
 
         audioAsset.bufferHandle = SubmitAudioClip(audioAsset.sizeBytes, (byte*)loadedData, audioAsset.channels, audioAsset.bitDepth, audioAsset.sampleRate);
-        
+
         return true;
     }
 
@@ -2530,6 +2530,6 @@ namespace atto {
     //    audioPakFile.Finished();
     //    fontPakFile.Finished();
     //}
-    
+
 }
 

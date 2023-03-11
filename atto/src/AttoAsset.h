@@ -570,8 +570,8 @@ namespace atto
         i32                                 MapTilePosToIndex(Map* map, i32 x, i32 y);
         MapTile*                            MapGetTile(Map* map, glm::vec2 tilePos);
         MapTile*                            MapGetTile(Map* map, i32 x, i32 y);
-        void                                MapGetTileNeighbors(Map* map, MapTile *tile, FixedList<MapTile*, 8>& neighbors);
-        void                                MapGetTileNeighbors(Map* map, i32 x, i32 y, FixedList<MapTile*, 8> &neighbors);
+        void                                MapGetTileNeighbors(Map* map, MapTile* tile, FixedList<MapTile*, 8>& neighbors);
+        void                                MapGetTileNeighbors(Map* map, i32 x, i32 y, FixedList<MapTile*, 8>& neighbors);
 
         BoxBounds                           EntityGetBoundingBox(const Entity& entity);
 
